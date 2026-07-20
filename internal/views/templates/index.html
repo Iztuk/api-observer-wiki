@@ -1,0 +1,474 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta
+      name="description"
+      content="API Observer documentation and project wiki."
+    />
+
+    <link rel="stylesheet" href="/static/styles.css" />
+
+    <title>API Observer Wiki</title>
+  </head>
+
+  <body>
+    <div class="wiki-layout">
+      <aside class="sidebar">
+        <h2 class="wiki-title"><u>API Observer</u></h2>
+
+        <nav class="sidebar-nav" aria-label="Documentation navigation">
+          <details open class="sidebar-accordion">
+            <summary>
+              <h3>Getting Started</h3>
+            </summary>
+
+            <div class="sidebar-block">
+              <a href="#overview">Overview</a>
+              <a href="#quick-start">Quick Start</a>
+              <a href="#architecture">Architecture</a>
+            </div>
+          </details>
+
+          <details open class="sidebar-accordion">
+            <summary>
+              <h3>SDK</h3>
+            </summary>
+
+            <div class="sidebar-block">
+              <a href="#go-sdk">Go</a>
+            </div>
+          </details>
+
+          <details open class="sidebar-accordion">
+            <summary>
+              <h3>Architecture</h3>
+            </summary>
+
+            <div class="sidebar-block">
+              <a href="#event-ingestion">Event Ingestion</a>
+              <a href="#openapi">OpenAPI Auditing</a>
+              <a href="#rules">Custom Rules</a>
+              <a href="#findings">Findings</a>
+              <a href="#storage">Storage</a>
+            </div>
+          </details>
+
+          <details open class="sidebar-accordion">
+            <summary>
+              <h3>Repository</h3>
+            </summary>
+
+            <div class="sidebar-block">
+              <a
+                href="https://github.com/Iztuk/observer"
+                target="_blank"
+                rel="noreferrer"
+              >
+                GitHub
+              </a>
+            </div>
+          </details>
+        </nav>
+
+        <div class="sidebar-footer">API Observer Wiki</div>
+      </aside>
+      <main class="wiki-content" id="top">
+        <article class="article">
+          <h1>API Observer</h1>
+
+          <section id="overview">
+            <h2>Overview</h2>
+
+            <p>
+              API Observer is a self-hosted API observability platform that
+              monitors and evaluates HTTP traffic against OpenAPI contracts and
+              custom security rules. It produces structured findings that help
+              developers identify unexpected behavior, contract violations, and
+              potential security concerns.
+            </p>
+
+            <p>
+              API Observer observes traffic without sitting directly in the
+              request path. Instead, an application uses the API Observer SDK to
+              copy completed HTTP exchanges and send them asynchronously to the
+              Observer service.
+            </p>
+
+            <h3>How it works</h3>
+
+            <ol class="overview-flow">
+              <li>
+                <strong>The application receives a request.</strong>
+                <p>
+                  The API Observer SDK captures a copy of the HTTP request and
+                  response.
+                </p>
+              </li>
+
+              <li>
+                <strong>The exchange is sent asynchronously.</strong>
+                <p>
+                  The SDK sends the copied exchange to the API Observer
+                  ingestion endpoint without delaying the application's
+                  response.
+                </p>
+              </li>
+
+              <li>
+                <strong>The exchange is evaluated.</strong>
+                <p>
+                  API Observer compares the traffic against the application's
+                  OpenAPI document and configured host rules.
+                </p>
+              </li>
+
+              <li>
+                <strong>Findings are generated.</strong>
+                <p>
+                  Contract violations, suspicious values, missing headers,
+                  unexpected fields, and other rule matches are recorded as
+                  structured findings.
+                </p>
+              </li>
+
+              <li>
+                <strong>Results are stored for review.</strong>
+                <p>
+                  Audit results and findings can be reviewed locally or
+                  forwarded to other monitoring and security systems.
+                </p>
+              </li>
+            </ol>
+
+            <h3>Design goals</h3>
+
+            <ul class="overview-list">
+              <li>
+                Observe API behavior without blocking application traffic.
+              </li>
+              <li>Validate real traffic against documented API contracts.</li>
+              <li>Support application-specific security and policy rules.</li>
+              <li>Keep SDK integration small and straightforward.</li>
+              <li>
+                Produce findings in a structured, machine-readable format.
+              </li>
+            </ul>
+          </section>
+          <section id="quick-start">
+            <h2>Quick Start</h2>
+
+            <p>Clone the project and start the Observer service:</p>
+
+            <pre><code>git clone https://github.com/Iztuk/observer.git
+cd observer
+
+go run ./cmd/observer</code></pre>
+
+            <p>Verify that the service is running:</p>
+
+            <pre><code>curl http://localhost:8080/health</code></pre>
+
+            <div class="callout">
+              <strong>Note</strong>
+
+              <p>
+                Update the command and port if your current project entry point
+                or server address is different.
+              </p>
+            </div>
+          </section>
+
+          <section id="architecture">
+            <h2>Architecture</h2>
+
+            <p>
+              API Observer is organized around a small set of components that
+              separate traffic capture from audit processing.
+            </p>
+
+            <h3>Application SDK</h3>
+
+            <p>
+              Middleware captures a copy of the incoming request and outgoing
+              response. The original application request continues normally.
+            </p>
+
+            <h3>Observer service</h3>
+
+            <p>
+              The service receives API exchange events through its ingest
+              endpoint and creates audit jobs for processing.
+            </p>
+
+            <h3>Rule engine</h3>
+
+            <p>
+              The rule engine evaluates API exchanges against OpenAPI
+              requirements and custom host-specific rules.
+            </p>
+
+            <h3>Log store</h3>
+
+            <p>
+              Jobs and audit findings can be stored as JSON Lines records for
+              later analysis.
+            </p>
+          </section>
+
+          <section id="sdk">
+            <h2>SDK</h2>
+
+            <p>
+              API Observer provides an SDK for capturing HTTP requests and
+              responses and sending them asynchronously to the Observer service.
+            </p>
+
+            <details class="sdk" open>
+              <summary>
+                <span class="sdk-language">Go</span>
+              </summary>
+
+              <div class="sdk-content">
+                <h2>Install</h2>
+
+                <pre><code>go get github.com/Iztuk/go-observer-sdk</code></pre>
+
+                <h2>Usage</h2>
+
+                <pre>
+<code>package main
+
+import (
+    "log"
+    "net/http"
+
+    observer "github.com/Iztuk/go-observer-sdk"
+)
+
+func main() {
+    mux := http.NewServeMux()
+
+    mux.HandleFunc("GET /health", func(
+        w http.ResponseWriter,
+        r *http.Request,
+    ) {
+        w.WriteHeader(http.StatusOK)
+        w.Write([]byte("healthy"))
+    })
+
+    handler := observer.Middleware(
+        observer.APIObserverConfig{
+            Endpoint: "http://localhost:8080/events",
+        },
+    )(mux)
+
+    log.Fatal(http.ListenAndServe(":8081", handler))
+}</code></pre>
+
+                <h2>Captured data</h2>
+
+                <ul>
+                  <li>HTTP method</li>
+                  <li>Request URL</li>
+                  <li>Request headers and body</li>
+                  <li>Response status code</li>
+                  <li>Response headers and body</li>
+                </ul>
+
+                <p>
+                  Events are sent asynchronously so the application does not
+                  need to wait for API Observer to process the exchange.
+                </p>
+              </div>
+            </details>
+          </section>
+          ```
+
+          <section id="event-ingestion">
+            <h2>Event Ingestion</h2>
+
+            <p>
+              The Observer server exposes an endpoint for receiving captured
+              HTTP exchanges from registered clients.
+            </p>
+
+            <pre><code>POST /events
+Content-Type: application/json
+X-Observer-SDK: true</code></pre>
+
+            <p>
+              After receiving an event, the service can store a job record and
+              pass the exchange to the rule engine.
+            </p>
+          </section>
+
+          <section id="openapi">
+            <h2>OpenAPI Auditing</h2>
+
+            <p>
+              API Observer can register an OpenAPI document for an application
+              and compare observed traffic against that contract.
+            </p>
+
+            <p>OpenAPI auditing can detect problems such as:</p>
+
+            <ul>
+              <li>Undocumented paths or methods</li>
+              <li>Unexpected response status codes</li>
+              <li>Missing response bodies</li>
+              <li>Invalid response body formats</li>
+              <li>Schema validation failures</li>
+              <li>Unexpected content types</li>
+            </ul>
+          </section>
+
+          <section id="rules">
+            <h2>Custom Rules</h2>
+
+            <p>
+              Custom host rules allow API Observer to detect behavior that may
+              not be represented by an OpenAPI document.
+            </p>
+
+            <p>Rules can match request or response properties such as:</p>
+
+            <ul>
+              <li>Paths and HTTP methods</li>
+              <li>Query parameters</li>
+              <li>Headers</li>
+              <li>Content types</li>
+              <li>JSON fields</li>
+              <li>Regular expression patterns</li>
+            </ul>
+
+            <pre><code>rules:
+  request.query.debug_enabled:
+    enabled: true
+    applies_to:
+      - request
+    type: query
+    description: Detects requests that enable debug mode.
+    match:
+      paths:
+        - "*"
+      methods:
+        - GET
+        - POST
+      query_params:
+        debug:
+          - "true"
+    finding:
+      title: Debug query parameter enabled
+      message: Request included debug=true in the query string.</code></pre>
+          </section>
+
+          <section id="findings">
+            <h2>Findings</h2>
+
+            <p>
+              When an exchange violates an OpenAPI requirement or custom rule,
+              API Observer creates an audit finding.
+            </p>
+
+            <p>A finding may include:</p>
+
+            <ul>
+              <li>A finding title</li>
+              <li>A human-readable message</li>
+              <li>The affected host and path</li>
+              <li>The request ID</li>
+              <li>The matching rule</li>
+              <li>The observed request or response metadata</li>
+              <li>A timestamp</li>
+            </ul>
+          </section>
+
+          <section id="storage">
+            <h2>Storage</h2>
+
+            <p>
+              API Observer currently supports structured JSON log storage for
+              jobs and audit findings.
+            </p>
+
+            <p>
+              Each object is written as a single JSON record on its own line,
+              making the files easy to inspect or ingest into another
+              observability platform.
+            </p>
+
+            <pre><code>API_OBSERVER_JOB_LOG_STORE=/var/log/observer/job.jsonl
+API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
+          </section>
+
+          <section id="configuration">
+            <h2>Configuration</h2>
+
+            <p>
+              API Observer can be configured through environment variables and
+              registration files.
+            </p>
+
+            <p>Typical configuration includes:</p>
+
+            <ul>
+              <li>The Observer server address</li>
+              <li>The event ingestion endpoint</li>
+              <li>The OpenAPI document path</li>
+              <li>The host rules path</li>
+              <li>The job log path</li>
+              <li>The findings log path</li>
+            </ul>
+
+            <pre><code>API_OBSERVER_ADDR=:8080
+API_OBSERVER_JOB_LOG_STORE=/var/log/observer/job.jsonl
+API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
+          </section>
+
+          <section id="deployment">
+            <h2>Deployment</h2>
+
+            <p>
+              API Observer can run locally during development, inside a
+              container, or as a service deployed alongside an application
+              stack.
+            </p>
+
+            <p>A typical deployment may contain:</p>
+
+            <ul>
+              <li>The application using the Observer SDK</li>
+              <li>The API Observer ingest service</li>
+              <li>OpenAPI and host-rule configuration files</li>
+              <li>Persistent storage for job and audit logs</li>
+            </ul>
+          </section>
+
+          <section id="demo">
+            <h2>Demo</h2>
+
+            <p>
+              A simple demo can send a request containing a known rule violation
+              and then display the resulting finding.
+            </p>
+
+            <pre><code>curl \
+  "http://localhost:8081/example?debug=true"</code></pre>
+
+            <p>
+              If the application is instrumented and the
+              <code>debug=true</code> rule is enabled, API Observer should
+              create a finding after receiving the captured exchange.
+            </p>
+          </section>
+        </article>
+
+        <footer class="page-footer">API Observer documentation</footer>
+      </main>
+    </div>
+  </body>
+</html>
