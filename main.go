@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	websiteHandler, err := views.NewHandler(nil)
+	websiteHandler, err := views.NewHandler()
 	if err != nil {
 		log.Fatalf(err.Error())
 	}

@@ -50,12 +50,13 @@
 
             <div class="sidebar-block">
               <a href="#event-ingestion">Event Ingestion</a>
-              <a href="#openapi">OpenAPI Auditing</a>
-              <a href="#rules">Custom Rules</a>
+              <a href="#auditing">Auditing</a>
               <a href="#findings">Findings</a>
               <a href="#storage">Storage</a>
             </div>
           </details>
+
+          <a class="sidebar-direct-link" href="#playground">Playground</a>
 
           <details open class="sidebar-accordion">
             <summary>
@@ -163,23 +164,13 @@
 
             <p>Clone the project and start the Observer service:</p>
 
-            <pre><code>git clone https://github.com/Iztuk/observer.git
-cd observer
-
+            <pre><code>git clone https://github.com/Iztuk/api-observer.git
+cd api-observer
 go run ./cmd/observer</code></pre>
 
             <p>Verify that the service is running:</p>
 
-            <pre><code>curl http://localhost:8080/health</code></pre>
-
-            <div class="callout">
-              <strong>Note</strong>
-
-              <p>
-                Update the command and port if your current project entry point
-                or server address is different.
-              </p>
-            </div>
+            <code>curl http://localhost:8080/health</code>
           </section>
 
           <section id="architecture">
@@ -214,8 +205,8 @@ go run ./cmd/observer</code></pre>
             <h3>Log store</h3>
 
             <p>
-              Jobs and audit findings can be stored as JSON Lines records for
-              later analysis.
+              Jobs and audit findings are stored as JSON Lines records for later
+              analysis.
             </p>
           </section>
 
@@ -286,7 +277,6 @@ func main() {
               </div>
             </details>
           </section>
-          ```
 
           <section id="event-ingestion">
             <h2>Event Ingestion</h2>
@@ -306,44 +296,48 @@ X-Observer-SDK: true</code></pre>
             </p>
           </section>
 
-          <section id="openapi">
-            <h2>OpenAPI Auditing</h2>
+          <section id="auditing">
+            <h2>Auditing</h2>
 
-            <p>
-              API Observer can register an OpenAPI document for an application
-              and compare observed traffic against that contract.
-            </p>
+            <section id="openapi">
+              <h3>OpenAPI</h3>
 
-            <p>OpenAPI auditing can detect problems such as:</p>
+              <p>
+                API Observer can register an OpenAPI document for an application
+                and compare observed traffic against that contract.
+              </p>
 
-            <ul>
-              <li>Undocumented paths or methods</li>
-              <li>Unexpected response status codes</li>
-              <li>Missing response bodies</li>
-              <li>Invalid response body formats</li>
-              <li>Schema validation failures</li>
-              <li>Unexpected content types</li>
-            </ul>
-          </section>
+              <p>OpenAPI auditing can detect problems such as:</p>
 
-          <section id="rules">
-            <h2>Custom Rules</h2>
+              <ul>
+                <li>Undocumented paths or methods</li>
+                <li>Unexpected response status codes</li>
+                <li>Missing response bodies</li>
+                <li>Invalid response body formats</li>
+                <li>Schema validation failures</li>
+                <li>Unexpected content types</li>
+              </ul>
+            </section>
 
-            <p>
-              Custom host rules allow API Observer to detect behavior that may
-              not be represented by an OpenAPI document.
-            </p>
+            <section id="rules">
+              <h3>Custom Rules</h3>
 
-            <p>Rules can match request or response properties such as:</p>
+              <p>
+                Custom host rules allow API Observer to detect behavior that may
+                not be represented by an OpenAPI document.
+              </p>
 
-            <ul>
-              <li>Paths and HTTP methods</li>
-              <li>Query parameters</li>
-              <li>Headers</li>
-              <li>Content types</li>
-              <li>JSON fields</li>
-              <li>Regular expression patterns</li>
-            </ul>
+              <p>Rules can match request or response properties such as:</p>
+
+              <ul>
+                <li>Paths and HTTP methods</li>
+                <li>Query parameters</li>
+                <li>Headers</li>
+                <li>Content types</li>
+                <li>JSON fields</li>
+                <li>Regular expression patterns</li>
+              </ul>
+            </section>
 
             <pre><code>rules:
   request.query.debug_enabled:
@@ -429,46 +423,118 @@ API_OBSERVER_JOB_LOG_STORE=/var/log/observer/job.jsonl
 API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
           </section>
 
-          <section id="deployment">
-            <h2>Deployment</h2>
+          <section id="playground">
+            <h2>Audit Playground</h2>
 
             <p>
-              API Observer can run locally during development, inside a
-              container, or as a service deployed alongside an application
-              stack.
+              Define an OpenAPI document and custom rules, then send a simulated
+              request through API Observer.
             </p>
 
-            <p>A typical deployment may contain:</p>
+            <div
+              class="editor-tabs"
+              role="tablist"
+              aria-label="Audit configuration"
+            >
+              <button
+                class="editor-tab active"
+                type="button"
+                role="tab"
+                aria-selected="true"
+                data-model="openapi"
+              >
+                openapi.yaml
+              </button>
 
-            <ul>
-              <li>The application using the Observer SDK</li>
-              <li>The API Observer ingest service</li>
-              <li>OpenAPI and host-rule configuration files</li>
-              <li>Persistent storage for job and audit logs</li>
-            </ul>
-          </section>
+              <button
+                class="editor-tab"
+                type="button"
+                role="tab"
+                aria-selected="false"
+                data-model="rules"
+              >
+                rules.yaml
+              </button>
+            </div>
 
-          <section id="demo">
-            <h2>Demo</h2>
+            <div id="playground-editor" class="editor"></div>
 
-            <p>
-              A simple demo can send a request containing a known rule violation
-              and then display the resulting finding.
-            </p>
+            <div class="request-builder">
+              <h3>Request</h3>
 
-            <pre><code>curl \
-  "http://localhost:8081/example?debug=true"</code></pre>
+              <div class="request-target">
+                <div class="field method-field">
+                  <label for="request-method">Method</label>
 
-            <p>
-              If the application is instrumented and the
-              <code>debug=true</code> rule is enabled, API Observer should
-              create a finding after receiving the captured exchange.
-            </p>
+                  <select id="request-method">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="PATCH">PATCH</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+
+                <div class="field path-field">
+                  <label for="request-path">Path</label>
+
+                  <input
+                    id="request-path"
+                    type="text"
+                    value="/users/123?debug=true"
+                    placeholder="/users/123?debug=true"
+                    spellcheck="false"
+                  />
+                </div>
+              </div>
+
+              <div class="request-fields">
+                <div class="field">
+                  <label for="request-headers">Headers</label>
+
+                  <textarea id="request-headers" rows="8" spellcheck="false">
+{
+  "Accept": "application/json",
+  "Content-Type": "application/json"
+}</textarea
+                  >
+                </div>
+
+                <div class="field">
+                  <label for="request-body">Body</label>
+
+                  <textarea
+                    id="request-body"
+                    rows="8"
+                    spellcheck="false"
+                    placeholder='{"name":"John"}'
+                  ></textarea>
+                </div>
+              </div>
+              <div class="playground-actions">
+                <button id="reset-playground" type="button">Reset</button>
+                <button id="run-audit" class="primary-button" type="button">
+                  Run
+                </button>
+              </div>
+            </div>
+
+            <p id="audit-status" class="audit-status" aria-live="polite"></p>
+
+            <div class="audit-output">
+              <h3>Results</h3>
+
+              <pre><code id="audit-result">Run the audit to view findings.</code></pre>
+            </div>
           </section>
         </article>
 
         <footer class="page-footer">API Observer documentation</footer>
       </main>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/monaco-editor@0.55.1/min/vs/loader.js"></script>
+    <script src="/static/audit-results.js"></script>
+    <script src="/static/editor.js"></script>
   </body>
 </html>
