@@ -48,27 +48,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/Investigation"
 
-        "400":
-          description: The investigation ID was not provided
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "404":
-          description: The investigation was not found
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
-        "405":
-          description: The HTTP method is not allowed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-
 components:
   schemas:
     Investigation:
@@ -148,21 +127,6 @@ components:
         url:
           type: string
           format: uri
-
-    ErrorResponse:
-      type: object
-      additionalProperties: false
-
-      required:
-        - error
-        - message
-
-      properties:
-        error:
-          type: string
-
-        message:
-          type: string
 `;
 
 const defaultRules = `rules:
