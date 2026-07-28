@@ -9,63 +9,183 @@ require.config({
 const defaultOpenAPI = `openapi: 3.0.3
 
 info:
-  title: Playground API
+  title: API Observer Investigation API
   version: 1.0.0
+  description: >
+    An API for reviewing findings and supporting evidence generated
+    during API traffic analysis.
 
 paths:
-  /users/{id}:
+  /investigations/{id}:
     get:
+      summary: Get an investigation
+      description: >
+        Returns the details and supporting evidence associated with
+        an API traffic investigation.
+      operationId: getInvestigation
+
       parameters:
         - name: id
           in: path
           required: true
+          description: Unique investigation identifier.
           schema:
             type: string
 
-        - name: debug
+        - name: include_evidence
           in: query
           required: false
+          description: Include supporting evidence in the response.
           schema:
             type: boolean
+            default: true
 
       responses:
         "200":
-          description: User returned successfully
+          description: Investigation returned successfully
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - id
-                  - name
-                properties:
-                  id:
-                    type: string
-                  name:
-                    type: string
+                $ref: "#/components/schemas/Investigation"
+
+        "400":
+          description: The investigation ID was not provided
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "404":
+          description: The investigation was not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+        "405":
+          description: The HTTP method is not allowed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    Investigation:
+      type: object
+      additionalProperties: false
+
+      required:
+        - id
+        - title
+        - status
+        - confidence
+        - severity
+        - summary
+        - evidence
+        - recommendation
+
+      properties:
+        id:
+          type: string
+
+        title:
+          type: string
+
+        status:
+          type: string
+          enum:
+            - open
+            - requires_review
+            - resolved
+
+        confidence:
+          type: number
+          format: double
+          minimum: 0
+          maximum: 1
+
+        severity:
+          type: string
+          enum:
+            - informational
+            - low
+            - medium
+            - high
+            - critical
+
+        summary:
+          type: string
+
+        evidence:
+          type: array
+          items:
+            $ref: "#/components/schemas/Evidence"
+
+        recommendation:
+          type: string
+
+    Evidence:
+      type: object
+      additionalProperties: false
+
+      required:
+        - type
+        - description
+        - url
+
+      properties:
+        type:
+          type: string
+          enum:
+            - external_reference
+            - request_capture
+            - response_capture
+
+        description:
+          type: string
+
+        url:
+          type: string
+          format: uri
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+
+      required:
+        - error
+        - message
+
+      properties:
+        error:
+          type: string
+
+        message:
+          type: string
 `;
 
 const defaultRules = `rules:
-  request.query.debug_enabled:
+  request.query.include_evidence:
     enabled: true
     applies_to:
       - request
     type: query
 
-    description: Detects requests that enable debug mode.
+    description: Detects requests that explicitly request supporting evidence.
 
     match:
       paths:
-        - "*"
+        - "/investigations/*"
       methods:
         - GET
       query_params:
-        debug:
+        include_evidence:
           - "true"
 
     finding:
-      title: Debug query parameter enabled
-      message: Request included debug=true in the query string.
+      title: Supporting evidence requested
+      message: Request explicitly included supporting investigation evidence.
 `;
 
 const defaultHeaders = {
@@ -138,6 +258,7 @@ function switchModel(modelName) {
   viewStates[activeModelName] = editor.saveViewState();
 
   activeModelName = modelName;
+
   editor.setModel(models[modelName]);
 
   if (viewStates[modelName]) {
@@ -148,6 +269,7 @@ function switchModel(modelName) {
     const isActive = tab.dataset.model === modelName;
 
     tab.classList.toggle("active", isActive);
+
     tab.setAttribute("aria-selected", String(isActive));
   });
 
@@ -163,7 +285,7 @@ function normalizePath(value) {
 
   if (/^https?:\/\//i.test(trimmed)) {
     throw new Error(
-      "Enter only a path, such as /users/123, not a complete URL.",
+      "Enter only a path, such as /investigations/INC-2026-042, not a complete URL.",
     );
   }
 
@@ -174,10 +296,14 @@ function buildPlaygroundPayload() {
   return {
     openapi: models.openapi.getValue(),
     rules: models.rules.getValue(),
+
     request: {
       method: document.getElementById("request-method").value,
+
       path: normalizePath(document.getElementById("request-path").value),
+
       headers: document.getElementById("request-headers").value,
+
       body: document.getElementById("request-body").value,
     },
   };
@@ -188,6 +314,7 @@ async function runAudit() {
 
   if (!editor || !models.openapi || !models.rules) {
     setStatus("The editor is still loading.", "error");
+
     return;
   }
 
@@ -213,10 +340,12 @@ async function runAudit() {
   try {
     const response = await fetch("/playground", {
       method: "POST",
+
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
+
       body: JSON.stringify(payload),
     });
 
@@ -281,6 +410,7 @@ function setStatus(message, type) {
   const statusElement = document.getElementById("audit-status");
 
   statusElement.textContent = message;
+
   statusElement.classList.remove("error", "success");
 
   if (type) {
@@ -294,11 +424,13 @@ function resetPlayground() {
   }
 
   models.openapi.setValue(defaultOpenAPI);
+
   models.rules.setValue(defaultRules);
 
   document.getElementById("request-method").value = "GET";
 
-  document.getElementById("request-path").value = "/users/123?debug=true";
+  document.getElementById("request-path").value =
+    "/investigations/INC-2026-042?include_evidence=true";
 
   document.getElementById("request-headers").value = JSON.stringify(
     defaultHeaders,
@@ -309,6 +441,7 @@ function resetPlayground() {
   document.getElementById("request-body").value = "";
 
   resetAuditResult();
+  setStatus("", "");
   switchModel("openapi");
 }
 

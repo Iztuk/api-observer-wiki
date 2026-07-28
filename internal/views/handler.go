@@ -173,11 +173,12 @@ func Playground(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reqJob := NewRequestJob(&http.Request{
+	fakeReq := &http.Request{
 		Method: req.Request.Method,
 		URL:    requestURL,
 		Header: headers,
-	}, "api-observer-playground", time.Now())
+	}
+	reqJob := NewRequestJob(fakeReq, "api-observer-playground", time.Now())
 
 	reqJob.Body = []byte(req.Request.Body)
 
@@ -222,9 +223,58 @@ func Playground(w http.ResponseWriter, r *http.Request) {
 
 	a, f, err := reqJob.Process(engine)
 	if err != nil {
-
+		utils.WriteJSONError(
+			w,
+			http.StatusInternalServerError,
+			"request_audit_failed",
+			fmt.Sprintf("Failed to audit request: %s", err),
+		)
 		return
 	}
+
+	jobs = append(jobs, a)
+	findings = append(findings, f...)
+
+	responseBody := `{
+  "id": "INC-2026-042",
+  "title": "Unexpected outbound media activity",
+  "status": "requires_review",
+  "confidence": 0.99,
+  "severity": "high",
+  "summary": "A previously undocumented external resource was identified during request analysis.",
+  "evidence": [
+    {
+      "type": "external_reference",
+      "description": "Open the captured external resource for manual verification.",
+      "url": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }
+  ],
+  "recommendation": "Review the external resource before closing the investigation."
+}`
+
+	resp := &http.Response{
+		Request:    fakeReq,
+		StatusCode: http.StatusOK,
+		Header: http.Header{
+			"Content-Type": []string{"application/json"},
+		},
+	}
+
+	respJob := NewResponseJob(resp, "api-observer-playground")
+
+	respJob.Body = []byte(responseBody)
+
+	a, f, err = respJob.Process(engine)
+	if err != nil {
+		utils.WriteJSONError(
+			w,
+			http.StatusInternalServerError,
+			"response_audit_failed",
+			fmt.Sprintf("Failed to audit response: %s", err),
+		)
+		return
+	}
+
 	jobs = append(jobs, a)
 	findings = append(findings, f...)
 

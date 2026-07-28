@@ -481,8 +481,8 @@ API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
                   <input
                     id="request-path"
                     type="text"
-                    value="/users/123?debug=true"
-                    placeholder="/users/123?debug=true"
+                    value="/investigations/INC-2026-042?include_evidence=true"
+                    placeholder="/investigations/INC-2026-042?include_evidence=true"
                     spellcheck="false"
                   />
                 </div>
@@ -524,7 +524,9 @@ API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
             <div class="audit-output">
               <h3>Results</h3>
 
-              <pre><code id="audit-result">Run the audit to view findings.</code></pre>
+              <div id="audit-result" class="audit-result">
+                <p class="empty-result">Run the audit to view findings.</p>
+              </div>
             </div>
           </section>
         </article>
