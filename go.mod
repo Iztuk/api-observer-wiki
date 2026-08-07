@@ -1,4 +1,4 @@
-module api-observer-website
+module api-observer-wiki
 
 go 1.26.4
 

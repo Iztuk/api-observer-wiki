@@ -325,6 +325,15 @@ section > code {
   left: 0.9rem;
 }
 
+.sdk-details {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.sdk-summary {
+  background: var(--code-background);
+}
+
 .sdk-language {
   font-weight: 600;
 }

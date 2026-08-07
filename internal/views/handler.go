@@ -1,7 +1,7 @@
 package views
 
 import (
-	"api-observer-website/internal/utils"
+	"api-observer-wiki/internal/utils"
 	"encoding/json"
 	"fmt"
 	"html/template"

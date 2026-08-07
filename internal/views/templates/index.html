@@ -166,11 +166,7 @@
 
             <pre><code>git clone https://github.com/Iztuk/api-observer.git
 cd api-observer
-go run ./cmd/observer</code></pre>
-
-            <p>Verify that the service is running:</p>
-
-            <code>curl http://localhost:8080/health</code>
+go run ./cmd/api-observer</code></pre>
           </section>
 
           <section id="architecture">
@@ -218,8 +214,8 @@ go run ./cmd/observer</code></pre>
               responses and sending them asynchronously to the Observer service.
             </p>
 
-            <details class="sdk" open>
-              <summary>
+            <details class="sdk-details" id="go-sdk">
+              <summary class="sdk-summary">
                 <span class="sdk-language">Go</span>
               </summary>
 
@@ -251,11 +247,21 @@ func main() {
         w.Write([]byte("healthy"))
     })
 
-    handler := observer.Middleware(
-        observer.APIObserverConfig{
-            Endpoint: "http://localhost:8080/events",
-        },
-    )(mux)
+    observerURL, err := url.Parse("http://localhost:24899")
+    if err != nil {
+	logger.Fatalf("parse observer URL: %v", err)
+    }
+
+    observerHandler, err := observer.Middleware(observer.APIObserverConfig{
+	Handler:      mux,
+	ObserverAddr: observerURL,
+	HostName:     "example-host",
+	OpenAPI:      "./openapi.yaml",
+	HostRules:    "./host-rules.yaml",
+    })
+    if err != nil {
+	    logger.Fatalf("initialize API Observer middleware: %v", err)
+    }
 
     log.Fatal(http.ListenAndServe(":8081", handler))
 }</code></pre>
@@ -287,8 +293,7 @@ func main() {
             </p>
 
             <pre><code>POST /events
-Content-Type: application/json
-X-Observer-SDK: true</code></pre>
+Content-Type: application/json</code></pre>
 
             <p>
               After receiving an event, the service can store a job record and
@@ -396,30 +401,6 @@ X-Observer-SDK: true</code></pre>
             </p>
 
             <pre><code>API_OBSERVER_JOB_LOG_STORE=/var/log/observer/job.jsonl
-API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
-          </section>
-
-          <section id="configuration">
-            <h2>Configuration</h2>
-
-            <p>
-              API Observer can be configured through environment variables and
-              registration files.
-            </p>
-
-            <p>Typical configuration includes:</p>
-
-            <ul>
-              <li>The Observer server address</li>
-              <li>The event ingestion endpoint</li>
-              <li>The OpenAPI document path</li>
-              <li>The host rules path</li>
-              <li>The job log path</li>
-              <li>The findings log path</li>
-            </ul>
-
-            <pre><code>API_OBSERVER_ADDR=:8080
-API_OBSERVER_JOB_LOG_STORE=/var/log/observer/job.jsonl
 API_OBSERVER_FINDINGS_LOG_STORE=/var/log/observer/audit.jsonl</code></pre>
           </section>
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"api-observer-website/internal/views"
+	"api-observer-wiki/internal/views"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,7 +11,7 @@ import (
 func main() {
 	websiteHandler, err := views.NewHandler()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatal(err.Error())
 	}
 
 	mux := http.NewServeMux()
